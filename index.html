@@ -370,9 +370,17 @@ function fmtElapsed(ts) {
 }
 
 function mapsUrl(direccion) {
-  if (/^https?:\/\//i.test(direccion.trim())) return direccion.trim();
-  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(direccion);
+  const dir = (direccion || '').trim();
+  const coords = parseCoords(dir);
+  if (coords) {
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + coords.lat + ',' + coords.lng + '&travelmode=driving';
+  }
+  if (/^https?:\/\//i.test(dir)) {
+    return dir;
+  }
+  return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dir) + '&travelmode=driving';
 }
+
 
 // Busca coordenadas dentro de un link de Maps (formatos típicos que
 // Google genera al compartir una ubicación). Direcciones escritas a
