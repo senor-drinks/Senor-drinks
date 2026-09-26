@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Señor Drinks — Pedidos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --bg-card: #161418;
+    --bg-card-hover: #1d1a1f;
+    --pink: #ff2e78;
+    --pink-dim: #7a1638;
+    --ink: #f5f2f0;
+    --ink-dim: #9c9499;
+    --line: #2a262a;
+    --late: #ff4d4d;
+    --late-bg: #2b0f13;
+    --enroute: #ffb238;
+    --done: #4dd88c;
+    --font-display: 'Anton', sans-serif;
+    --font-body: 'Space Grotesk', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--line);
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 26px;
+    letter-spacing: 0.5px;
+    margin: 0;
+    color: var(--ink);
+  }
+  h1 span { color: var(--pink); }
+  #status-pill {
+    font-size: 11px;
+    color: var(--ink-dim);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  #status-pill.live { color: var(--done); border-color: var(--done); }
+
+  /* form */
+  .add-toggle {
+    width: 100%;
+    background: var(--pink);
+    color: #14040a;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    margin-bottom: 16px;
+  }
+  .add-toggle:active { transform: scale(0.99); }
+
+  #form-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  #form-card.open { display: block; }
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-bottom: 5px;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    background: #0f0d10;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 11px 12px;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+  }
+  .field textarea { resize: vertical; min-height: 44px; }
+  .field input:focus, .field textarea:focus { outline: 1px solid var(--pink); border-color: var(--pink); }
+  .hint { font-size: 11px; color: var(--ink-dim); margin-top: 5px; }
+  .hint.warn { color: var(--enroute); }
+  .hint.ok { color: #6ec6ff; }
+  .form-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .btn-primary, .btn-secondary {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--pink); color: #14040a; }
+  .btn-secondary { background: transparent; color: var(--ink-dim); border: 1px solid var(--line); }
+
+  /* section labels */
+  .section-label {
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin: 22px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label .count {
+    background: var(--line);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 11px;
+  }
+
+  .empty {
+    color: var(--ink-dim);
+    font-size: 14px;
+    padding: 24px 4px;
+    text-align: center;
+    border: 1px dashed var(--line);
+    border-radius: 12px;
+  }
+
+  /* order card */
+  .order {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .order.late { background: var(--late-bg); border-color: var(--late); }
+  .order.done { opacity: 0.55; }
+  .order-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .cliente { font-weight: 700; font-size: 16px; }
+  .meta-time { font-size: 12px; color: var(--ink-dim); white-space: nowrap; }
+  .late .meta-time { color: var(--late); font-weight: 700; }
+  .direccion { font-size: 14px; color: var(--ink); margin-bottom: 4px; }
+  .productos { font-size: 13px; color: var(--ink-dim); margin-bottom: 4px; }
+  .notas { font-size: 12px; color: var(--ink-dim); font-style: italic; margin-bottom: 8px; }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
+  .badge.pendiente { background: var(--line); color: var(--ink-dim); }
+  .badge.en_camino { background: #3a2a10; color: var(--enroute); }
+  .badge.entregado { background: #103a22; color: var(--done); }
+  .badge.late-tag { background: var(--late); color: #14040a; margin-left: 6px; }
+  .badge.dist-tag { background: #142a38; color: #6ec6ff; margin-left: 6px; }
+  .badge.nodist-tag { background: var(--line); color: var(--ink-dim); margin-left: 6px; font-weight: 500; }
+  .sort-toggle {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sort-toggle.active { color: #6ec6ff; border-color: #234a5c; }
+  .order-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .btn-map, .btn-status {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: #0f0d10;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .btn-map { color: var(--pink); border-color: var(--pink-dim); }
+  .btn-ig { color: var(--enroute); border-color: #4a3a18; }
+  .btn-status.advance { background: var(--pink); color: #14040a; border-color: var(--pink); }
+  .btn-status.entregar { background: var(--done); color: #06180d; border-color: var(--done); }
+  .btn-delete {
+    background: none;
+    border: none;
+    color: var(--ink-dim);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  /* login */
+  #login-screen {
+    max-width: 340px;
+    margin: 80px auto 0;
+    padding: 0 16px;
+  }
+  #login-screen h1 { text-align: center; margin-bottom: 28px; }
+  #login-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  #login-error {
+    color: var(--late);
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+  #logout-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  #app-screen { display: none; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <h1 style="font-family:var(--font-display); letter-spacing:0.5px;">SEÑOR<span style="color:var(--pink)">DRINKS</span></h1>
+  <div id="login-card">
+    <div class="field">
+      <label>Usuario (mail)</label>
+      <input type="email" id="login-email" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="login-password" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" id="login-btn" style="width:100%;">Entrar</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<div class="wrap" id="app-screen">
+  <header>
+    <h1>SEÑOR<span>DRINKS</span></h1>
+    <div class="header-right">
+      <span id="status-pill">conectando…</span>
+      <button id="logout-btn">Salir</button>
+    </div>
+  </header>
+
+  <button class="add-toggle" id="toggleForm">+ Cargar pedido</button>
+
+  <div id="form-card">
+    <div class="field">
+      <label>Cliente</label>
+      <input type="text" id="f-cliente" placeholder="Nombre">
+    </div>
+    <div class="field">
+      <label>Dirección</label>
+      <input type="text" id="f-direccion" placeholder="Calle y altura, o link de Maps">
+      <div id="dir-hint" class="hint"></div>
+    </div>
+    <div class="field">
+      <label>Pedido</label>
+      <textarea id="f-productos" placeholder="Ej: 2 Daiquiri Frutilla, 1 Caipi Maracuyá"></textarea>
+    </div>
+    <div class="field">
+      <label>Notas (opcional)</label>
+      <input type="text" id="f-notas" placeholder="Ej: timbre roto, dejar en portería">
+    </div>
+    <div class="field">
+      <label>Instagram del cliente (opcional)</label>
+      <input type="text" id="f-instagram" placeholder="@usuario">
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary" id="cancelForm">Cancelar</button>
+      <button class="btn-primary" id="submitForm">Agregar pedido</button>
+    </div>
+  </div>
+
+  <div class="section-label">EN CURSO <span class="count" id="count-activos">0</span><button class="sort-toggle" id="sortToggle">📍 Ordenar por cercanía</button></div>
+  <div id="list-activos"></div>
+
+  <div class="section-label">ENTREGADOS HOY <span class="count" id="count-entregados">0</span></div>
+  <div id="list-entregados"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, doc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCl4HQP1WSmKJhKv5rteYooX7y4XvWGMSI",
+  authDomain: "senor-drinks.firebaseapp.com",
+  projectId: "senor-drinks",
+  storageBucket: "senor-drinks.firebasestorage.app",
+  messagingSenderId: "222434507695",
+  appId: "1:222434507695:web:7193e2d918931d26f7cd5a"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+const firestore = getFirestore(fbApp);
+let unsubscribe = null;
+
+const LATE_MS = 30 * 60 * 1000; // 30 min
+
+let pedidos = [];
+let sortMode = 'recientes'; // 'recientes' | 'cercania'
+let deliveryCoords = null;
+
+function fmtElapsed(ts) {
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  if (mins < 1) return 'recién';
+  if (mins < 60) return mins + ' min';
+  const h = Math.floor(mins / 60);
+  return h + 'h ' + (mins % 60) + 'm';
+}
+
+function mapsUrl(direccion) {
+  if (/^https?:\/\//i.test(direccion.trim())) return direccion.trim();
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(direccion);
+}
+
+// Busca coordenadas dentro de un link de Maps (formatos típicos que
+// Google genera al compartir una ubicación). Direcciones escritas a
+// mano (sin link) no tienen coordenadas, así que no se pueden ordenar
+// por distancia real.
+function parseCoords(direccion) {
+  if (!direccion) return null;
+  const patterns = [
+    /@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,
+    /[?&]q=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,
+    /[?&]ll=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/,
+    /[?&]destination=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/
+  ];
+  for (const re of patterns) {
+    const m = direccion.match(re);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+  }
+  return null;
+}
+
+function haversineKm(a, b) {
+  const R = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const lat1 = a.lat * Math.PI / 180;
+  const lat2 = b.lat * Math.PI / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// Detecta links cortos de Maps (maps.app.goo.gl / goo.gl) que no
+// traen coordenadas en el texto — no hay forma de resolverlos desde acá.
+function isShortMapsLink(direccion) {
+  return /goo\.gl\//i.test(direccion || '');
+}
+
+function fmtDist(km) {
+  return km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(1) + ' km';
+}
+
+function statusLabel(estado) {
+  return { pendiente: 'Pendiente', en_camino: 'En camino', entregado: 'Entregado' }[estado] || estado;
+}
+
+function igMessage(estado) {
+  if (estado === 'en_camino') return 'Tu pedido está en camino!\nPorfavor estar atentos\nMoto azul';
+  if (estado === 'entregado') return '¡Gracias por tu pedido! Que lo disfrutes 🍹';
+  return '¡Hola! Ya estamos preparando tu pedido 🍹';
+}
+
+function igUsername(raw) {
+  let s = (raw || '').trim();
+  s = s.replace(/^@/, '');
+  s = s.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '');
+  const match = s.match(/^[A-Za-z0-9._]+/);
+  return match ? match[0] : '';
+}
+
+function render() {
+  const activos = pedidos.filter(p => p.estado !== 'entregado');
+  const entregados = pedidos.filter(p => p.estado === 'entregado').sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+
+  if (sortMode === 'cercania' && deliveryCoords) {
+    activos.forEach(p => {
+      const coords = parseCoords(p.direccion);
+      p._dist = coords ? haversineKm(deliveryCoords, coords) : null;
+    });
+    activos.sort((a, b) => {
+      if (a._dist == null && b._dist == null) return b.createdAt - a.createdAt;
+      if (a._dist == null) return 1;
+      if (b._dist == null) return -1;
+      return a._dist - b._dist;
+    });
+  } else {
+    activos.forEach(p => { p._dist = null; });
+    activos.sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  document.getElementById('count-activos').textContent = activos.length;
+  document.getElementById('count-entregados').textContent = entregados.length;
+
+  const activosEl = document.getElementById('list-activos');
+  const entregadosEl = document.getElementById('list-entregados');
+
+  activosEl.innerHTML = activos.length ? '' : '<div class="empty">No hay pedidos en curso.</div>';
+  entregadosEl.innerHTML = entregados.length ? '' : '<div class="empty">Todavía no entregaste nada hoy.</div>';
+
+  activos.forEach(p => activosEl.appendChild(renderCard(p)));
+  entregados.forEach(p => entregadosEl.appendChild(renderCard(p)));
+}
+
+function renderCard(p) {
+  const late = p.estado !== 'entregado' && (Date.now() - p.createdAt) > LATE_MS;
+  const el = document.createElement('div');
+  el.className = 'order' + (late ? ' late' : '') + (p.estado === 'entregado' ? ' done' : '');
+
+  const top = document.createElement('div');
+  top.className = 'order-top';
+  const cliente = document.createElement('div');
+  cliente.className = 'cliente';
+  cliente.textContent = p.cliente || 'Sin nombre';
+  const time = document.createElement('div');
+  time.className = 'meta-time';
+  time.textContent = fmtElapsed(p.createdAt);
+  top.appendChild(cliente);
+  top.appendChild(time);
+  el.appendChild(top);
+
+  const badge = document.createElement('span');
+  badge.className = 'badge ' + p.estado;
+  badge.textContent = statusLabel(p.estado);
+  el.appendChild(badge);
+  if (late) {
+    const lt = document.createElement('span');
+    lt.className = 'badge late-tag';
+    lt.textContent = 'ATRASADO';
+    el.appendChild(lt);
+  }
+  if (sortMode === 'cercania' && p.estado !== 'entregado') {
+    const dt = document.createElement('span');
+    if (p._dist != null) {
+      dt.className = 'badge dist-tag';
+      dt.textContent = '📍 ' + fmtDist(p._dist);
+    } else if (isShortMapsLink(p.direccion)) {
+      dt.className = 'badge nodist-tag';
+      dt.textContent = 'link corto sin coordenadas';
+    } else {
+      dt.className = 'badge nodist-tag';
+      dt.textContent = 'sin ubicación exacta';
+    }
+    el.appendChild(dt);
+  }
+
+  const dir = document.createElement('div');
+  dir.className = 'direccion';
+  dir.textContent = p.direccion || 'Sin dirección';
+  el.appendChild(dir);
+
+  if (p.productos) {
+    const prod = document.createElement('div');
+    prod.className = 'productos';
+    prod.textContent = p.productos;
+    el.appendChild(prod);
+  }
+  if (p.notas) {
+    const notas = document.createElement('div');
+    notas.className = 'notas';
+    notas.textContent = p.notas;
+    el.appendChild(notas);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'order-actions';
+
+  const mapBtn = document.createElement('a');
+  mapBtn.className = 'btn-map';
+  mapBtn.href = mapsUrl(p.direccion || '');
+  mapBtn.target = '_blank';
+  mapBtn.rel = 'noopener';
+  mapBtn.textContent = '📍 Ir en Maps';
+  mapBtn.addEventListener('click', () => {
+    // No bloqueamos la navegación; si el pedido estaba pendiente, al
+    // abrir Maps para ir queda marcado como en camino automáticamente.
+    if (p.estado === 'pendiente') updateEstado(p.id, 'en_camino');
+  });
+  actions.appendChild(mapBtn);
+
+  if (p.instagram) {
+    const user = igUsername(p.instagram);
+    const igBtn = document.createElement('a');
+    igBtn.className = 'btn-map btn-ig';
+    igBtn.href = 'https://instagram.com/' + user;
+    igBtn.target = '_blank';
+    igBtn.rel = 'noopener';
+    igBtn.textContent = '📩 Perfil + mensaje copiado';
+    igBtn.addEventListener('click', () => {
+      // No bloqueamos la navegación del link; el copiado corre en paralelo.
+      navigator.clipboard.writeText(igMessage(p.estado)).catch(() => {});
+    });
+    actions.appendChild(igBtn);
+  }
+
+  if (p.estado === 'pendiente') {
+    const btn = document.createElement('button');
+    btn.className = 'btn-status advance';
+    btn.textContent = 'Marcar en camino';
+    btn.onclick = () => updateEstado(p.id, 'en_camino');
+    actions.appendChild(btn);
+  } else if (p.estado === 'en_camino') {
+    const btn = document.createElement('button');
+    btn.className = 'btn-status entregar';
+    btn.textContent = 'Marcar entregado';
+    btn.onclick = () => updateEstado(p.id, 'entregado');
+    actions.appendChild(btn);
+  } else {
+    const del = document.createElement('button');
+    del.className = 'btn-delete';
+    del.textContent = '✕';
+    del.title = 'Quitar de la lista';
+    del.onclick = () => removePedido(p.id);
+    actions.appendChild(del);
+  }
+
+  el.appendChild(actions);
+  return el;
+}
+
+async function updateEstado(id, estado) {
+  try {
+    await updateDoc(doc(firestore, 'pedidos', id), { estado, updatedAt: Date.now() });
+  } catch (e) { console.error(e); }
+}
+
+async function removePedido(id) {
+  try { await deleteDoc(doc(firestore, 'pedidos', id)); } catch (e) { console.error(e); }
+}
+
+async function addPedido() {
+  const cliente = document.getElementById('f-cliente').value.trim();
+  const direccion = document.getElementById('f-direccion').value.trim();
+  const productos = document.getElementById('f-productos').value.trim();
+  const notas = document.getElementById('f-notas').value.trim();
+  const instagram = document.getElementById('f-instagram').value.trim();
+  if (!cliente || !direccion) {
+    alert('Poné al menos cliente y dirección.');
+    return;
+  }
+  try {
+    await addDoc(collection(firestore, 'pedidos'), {
+      cliente, direccion, productos, notas, instagram,
+      estado: 'pendiente',
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    document.getElementById('f-cliente').value = '';
+    document.getElementById('f-direccion').value = '';
+    document.getElementById('f-productos').value = '';
+    document.getElementById('f-notas').value = '';
+    document.getElementById('f-instagram').value = '';
+    document.getElementById('dir-hint').textContent = '';
+    document.getElementById('dir-hint').className = 'hint';
+    document.getElementById('form-card').classList.remove('open');
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo guardar el pedido, probá de nuevo.');
+  }
+}
+
+document.getElementById('toggleForm').onclick = () => {
+  document.getElementById('form-card').classList.add('open');
+};
+document.getElementById('cancelForm').onclick = () => {
+  document.getElementById('form-card').classList.remove('open');
+};
+document.getElementById('submitForm').onclick = addPedido;
+
+function checkDirHint() {
+  const val = document.getElementById('f-direccion').value.trim();
+  const hint = document.getElementById('dir-hint');
+  if (!val) { hint.textContent = ''; hint.className = 'hint'; return; }
+  if (isShortMapsLink(val)) {
+    hint.textContent = '⚠️ Es un link corto (goo.gl) — no sirve para ordenar por cercanía. Abrilo, esperá que cargue, y pegá el link largo de la barra de direcciones.';
+    hint.className = 'hint warn';
+  } else if (parseCoords(val)) {
+    hint.textContent = '✓ Este link trae ubicación exacta, sirve para ordenar por cercanía.';
+    hint.className = 'hint ok';
+  } else if (/^https?:\/\//i.test(val)) {
+    hint.textContent = '⚠️ No encuentro coordenadas en este link — puede que no ordene bien por cercanía.';
+    hint.className = 'hint warn';
+  } else {
+    hint.textContent = '';
+    hint.className = 'hint';
+  }
+}
+document.getElementById('f-direccion').addEventListener('input', checkDirHint);
+
+function updateSortToggle() {
+  const btn = document.getElementById('sortToggle');
+  if (sortMode === 'cercania') {
+    btn.textContent = '🕐 Ordenar por más nuevo';
+    btn.classList.add('active');
+  } else {
+    btn.textContent = '📍 Ordenar por cercanía';
+    btn.classList.remove('active');
+  }
+}
+
+document.getElementById('sortToggle').onclick = () => {
+  if (sortMode === 'cercania') {
+    sortMode = 'recientes';
+    updateSortToggle();
+    render();
+    return;
+  }
+  if (!navigator.geolocation) {
+    alert('Tu navegador no permite compartir ubicación.');
+    return;
+  }
+  const btn = document.getElementById('sortToggle');
+  btn.textContent = 'Ubicando…';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      deliveryCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      sortMode = 'cercania';
+      updateSortToggle();
+      render();
+    },
+    (err) => {
+      console.error(err);
+      alert('No pude acceder a tu ubicación. Revisá los permisos del navegador para este sitio.');
+      updateSortToggle();
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+};
+
+setInterval(render, 30000);
+
+function startListening() {
+  const pill = document.getElementById('status-pill');
+  const q = query(collection(firestore, 'pedidos'), orderBy('createdAt', 'desc'));
+  unsubscribe = onSnapshot(q,
+    (snap) => {
+      pedidos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      pill.textContent = 'en vivo';
+      pill.classList.add('live');
+      render();
+    },
+    (err) => {
+      console.error(err);
+      pill.textContent = 'error de conexión';
+    }
+  );
+}
+
+document.getElementById('login-btn').onclick = async () => {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Completá usuario y contraseña.'; return; }
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (e) {
+    errEl.textContent = 'Usuario o contraseña incorrectos.';
+  }
+};
+
+document.getElementById('logout-btn').onclick = async () => {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  await signOut(auth);
+};
+
+onAuthStateChanged(auth, (user) => {
+  const loginScreen = document.getElementById('login-screen');
+  const appScreen = document.getElementById('app-screen');
+  if (user) {
+    loginScreen.style.display = 'none';
+    appScreen.style.display = 'block';
+    startListening();
+  } else {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    appScreen.style.display = 'none';
+    loginScreen.style.display = 'block';
+    document.getElementById('login-password').value = '';
+  }
+});
+</script>
+</body>
+</html>
